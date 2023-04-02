@@ -28,7 +28,23 @@ namespace MultiThreading.Task1._100Tasks
 
         static void HundredTasks()
         {
-            // feel free to add your code here
+            var hundredTasks = new Task[TaskAmount];
+
+            for (int i = 0; i < hundredTasks.Length; i++)
+            {
+                hundredTasks[i] = new Task(() =>
+                {
+                    for (int j = 1; j <= MaxIterationsCount; j++)
+                    {
+                        Output(Task.CurrentId.Value, j);
+                    }
+                });
+            }
+
+            foreach (var task in hundredTasks)
+                task.Start();
+
+            Task.WhenAll(hundredTasks);
         }
 
         static void Output(int taskNumber, int iterationNumber)
