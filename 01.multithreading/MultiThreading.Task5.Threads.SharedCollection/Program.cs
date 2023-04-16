@@ -5,6 +5,7 @@
  * Use Thread, ThreadPool or Task classes for thread creation and any kind of synchronization constructions.
  */
 using System;
+using System.Threading.Tasks;
 
 namespace MultiThreading.Task5.Threads.SharedCollection
 {
@@ -17,7 +18,13 @@ namespace MultiThreading.Task5.Threads.SharedCollection
             Console.WriteLine("Use Thread, ThreadPool or Task classes for thread creation and any kind of synchronization constructions.");
             Console.WriteLine();
 
-            // feel free to add your code
+            var operation = new ReadWriteLockSlimOperation(10);
+
+            var task1 = Task.Factory.StartNew(() => operation.Write());
+            var task2 = Task.Factory.StartNew(() => operation.Read());
+
+
+            Task.WaitAll(task1, task2);
 
             Console.ReadLine();
         }

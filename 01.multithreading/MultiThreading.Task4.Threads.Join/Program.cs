@@ -10,6 +10,7 @@
  */
 
 using System;
+using System.Threading;
 
 namespace MultiThreading.Task4.Threads.Join
 {
@@ -26,9 +27,43 @@ namespace MultiThreading.Task4.Threads.Join
 
             Console.WriteLine();
 
-            // feel free to add your code
+            RunThreadsRecursively(10);
+            Console.WriteLine();
+            RunThreadsThreadPoolRecursively(10);
 
             Console.ReadLine();
+        }
+
+        static void RunThreadsRecursively(object num)
+        {
+            int n = (int)num;
+            if (n <= 0)
+                return;
+
+            Thread t = new Thread(RunThreadsRecursively);
+            t.Name = t.ManagedThreadId.ToString();
+            t.Start(n - 1);
+
+
+            Console.Write(" " + n + " ");
+            Console.WriteLine(t.Name);
+
+            t.Join();
+        }
+
+        static void RunThreadsThreadPoolRecursively(object num)
+        {
+            int n = (int)num;
+            if (n <= 0)
+                return;
+
+
+            Thread.CurrentThread.Name = n.ToString();
+            ThreadPool.QueueUserWorkItem(new WaitCallback(RunThreadsThreadPoolRecursively), n - 1);
+
+
+            Console.Write(" " + n + " ");
+            Console.WriteLine(Thread.CurrentThread.Name);
         }
     }
 }
