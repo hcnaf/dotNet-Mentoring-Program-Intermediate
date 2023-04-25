@@ -10,7 +10,7 @@ namespace MultiThreading.Task5.Threads.SharedCollection
     {
         private readonly int _iterations;
         private readonly List<int> _items = new List<int>();
-        private readonly ReaderWriterLockSlim _slim = new ReaderWriterLockSlim();
+        private readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
         public ReadWriteLockSlimOperation(int iterations) { _iterations = iterations; }
 
@@ -18,7 +18,7 @@ namespace MultiThreading.Task5.Threads.SharedCollection
         {
             for (int i = 1; i <= _iterations; i++)
             {
-                _slim.EnterWriteLock();
+                _rwLock.EnterWriteLock();
                 int newNumber = i;
 
                 _items.Add(newNumber);
@@ -26,7 +26,7 @@ namespace MultiThreading.Task5.Threads.SharedCollection
                 Console.WriteLine("");
                 Console.WriteLine("Thread " + Task.CurrentId + " added " + newNumber);
 
-                _slim.ExitWriteLock();
+                _rwLock.ExitWriteLock();
             }
         }
 
@@ -34,7 +34,7 @@ namespace MultiThreading.Task5.Threads.SharedCollection
         {
             while (_items.Count < _iterations)
             {
-                _slim.EnterReadLock();
+                _rwLock.EnterReadLock();
 
                 Console.WriteLine("Thread " + Task.CurrentId + " readed ");
 
@@ -46,7 +46,7 @@ namespace MultiThreading.Task5.Threads.SharedCollection
                 Console.WriteLine("");
                 Console.WriteLine("");
 
-                _slim.ExitReadLock();
+                _rwLock.ExitReadLock();
             }
         }
     }

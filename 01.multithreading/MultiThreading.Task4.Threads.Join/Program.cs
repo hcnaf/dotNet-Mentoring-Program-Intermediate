@@ -16,6 +16,8 @@ namespace MultiThreading.Task4.Threads.Join
 {
     class Program
     {
+        private static SemaphoreSlim semaphore = new SemaphoreSlim(0, 1);
+
         static void Main(string[] args)
         {
             Console.WriteLine("4.	Write a program which recursively creates 10 threads.");
@@ -30,6 +32,7 @@ namespace MultiThreading.Task4.Threads.Join
             RunThreadsRecursively(10);
             Console.WriteLine();
             RunThreadsThreadPoolRecursively(10);
+            semaphore.Wait();    
 
             Console.ReadLine();
         }
@@ -55,7 +58,10 @@ namespace MultiThreading.Task4.Threads.Join
         {
             int n = (int)num;
             if (n <= 0)
+            {
+                semaphore.Release();
                 return;
+            }
 
 
             Thread.CurrentThread.Name = n.ToString();
