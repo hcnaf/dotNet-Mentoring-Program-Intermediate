@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using ProfileSample.DAL;
@@ -11,54 +13,53 @@ namespace ProfileSample.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
             var context = new ProfileSampleEntities();
 
             var sources = context.ImgSources.Take(20).Select(x => x.Id);
             
-            var model = new List<ImageModel>();
-
-            foreach (var id in sources)
-            {
-                var item = context.ImgSources.Find(id);
-
-                var obj = new ImageModel()
+            var model = await context.ImgSources
+                .Take(20)
+                .Select(x => new ImageModel()
                 {
-                    Name = item.Name,
-                    Data = item.Data
-                };
-
-                model.Add(obj);
-            } 
+                    Name = x.Name,
+                    Data = x.Data
+                })
+                .ToListAsync();
 
             return View(model);
         }
 
-        public ActionResult Convert()
+        public async Task<ActionResult> Convert()
         {
             var files = Directory.GetFiles(Server.MapPath("~/Content/Img"), "*.jpg");
 
             using (var context = new ProfileSampleEntities())
             {
+                var filesToAdd = new List<ImgSource>();
+
                 foreach (var file in files)
                 {
                     using (var stream = new FileStream(file, FileMode.Open))
                     {
                         byte[] buff = new byte[stream.Length];
 
-                        stream.Read(buff, 0, (int) stream.Length);
+                        await stream.ReadAsync(buff, 0, (int) stream.Length);
 
-                        var entity = new ImgSource()
+                        filesToAdd.Add(new ImgSource()
                         {
                             Name = Path.GetFileName(file),
                             Data = buff,
-                        };
-
-                        context.ImgSources.Add(entity);
-                        context.SaveChanges();
+                        });
                     }
-                } 
+                }
+
+                if (filesToAdd.Any())
+                {
+                    context.ImgSources.AddRange(filesToAdd);
+                    await context.SaveChangesAsync();
+                }
             }
 
             return RedirectToAction("Index");
