@@ -8,6 +8,7 @@ namespace Expressions.Task3.E3SQueryProvider
     public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
         readonly StringBuilder _resultStringBuilder;
+        private int RecursiveAndCounter = 0;
 
         public ExpressionToFtsRequestTranslator()
         {
@@ -33,6 +34,28 @@ namespace Expressions.Task3.E3SQueryProvider
 
                 return node;
             }
+
+            if (node.Method.DeclaringType == typeof(string))
+            {
+                (string opening, string closing) = node.Method.Name switch
+                {
+                    "Equals" => ("(", ")"),
+                    "Contains" => ("(*", "*)"),
+                    "StartsWith" => ("(", "*)"),
+                    "EndsWith" => ("(*", ")"),
+                    _ => (null, null),
+                };
+
+                if (opening != null && closing != null)
+                {
+                    Visit(node.Object);
+                    _resultStringBuilder.Append(opening);
+                    Visit(node.Arguments[0]);
+                    _resultStringBuilder.Append(closing);
+                    return node;
+                }
+            }
+
             return base.VisitMethodCall(node);
         }
 
@@ -41,16 +64,35 @@ namespace Expressions.Task3.E3SQueryProvider
             switch (node.NodeType)
             {
                 case ExpressionType.Equal:
-                    if (node.Left.NodeType != ExpressionType.MemberAccess)
-                        throw new NotSupportedException($"Left operand should be property or field: {node.NodeType}");
+                    (Expression member, Expression constatnt) = (node.Left.NodeType, node.Right.NodeType) switch
+                    {
+                        (ExpressionType.MemberAccess, ExpressionType.Constant) => (node.Left, node.Right),
+                        (ExpressionType.Constant, ExpressionType.MemberAccess) => (node.Right, node.Left),
+                        _ => throw new NotSupportedException()
+                    };
 
-                    if (node.Right.NodeType != ExpressionType.Constant)
-                        throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
-
-                    Visit(node.Left);
+                    Visit(member);
                     _resultStringBuilder.Append("(");
-                    Visit(node.Right);
+                    Visit(constatnt);
                     _resultStringBuilder.Append(")");
+                    break;
+
+                case ExpressionType.AndAlso:
+                    if (RecursiveAndCounter == 0)
+                    {
+                        _resultStringBuilder.Append("\"statements\": [ { \"query\":\"");
+                    }
+
+                    RecursiveAndCounter += 1;
+                    Visit(node.Left);
+                    _resultStringBuilder.Append("\" }, { \"query\":\"");
+                    Visit(node.Right);
+
+                    RecursiveAndCounter -= 1;
+                    if (RecursiveAndCounter == 0)
+                    {
+                        _resultStringBuilder.Append("\" } ]");
+                    }
                     break;
 
                 default:
